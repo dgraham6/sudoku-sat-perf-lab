@@ -14,8 +14,8 @@ This repo is my **performance lab**: a place to re-implement pieces of Tdoku’s
 
 * **Two experimental solvers**
 
-  * `drake/triad_scc_soa` — Struct-of-Arrays layout and cache-first tweaks.
-  * `drake/triad_scc_parallel_d1` — “Fan-out on guess” thread parallelism (depth-1 splitting).
+  * `lab_code/triad_scc_soa` — Struct-of-Arrays layout and cache-first tweaks.
+  * `lab_code/triad_scc_parallel_d1` — “Fan-out on guess” thread parallelism (depth-1 splitting).
 * **Reproducible benchmarks** on the same datasets Tdoku uses.
 * **Key lessons**: parallelism helps rarely, while micro-optimizations dominate.
 
@@ -49,7 +49,7 @@ Most puzzles collapse under unit propagation and short implication chains. That 
 ## Analysis of results
 
 **SoA beats Parallel D1.**
-`drake/triad_scc_soa` runs \~55% faster than the depth-1 parallel version. Memory layout wins; thread overhead loses — especially since \~48% of puzzles need **no guesses at all**.
+`lab_code/triad_scc_soa` runs \~55% faster than the depth-1 parallel version. Memory layout wins; thread overhead loses — especially since \~48% of puzzles need **no guesses at all**.
 
 **Tdoku is \~7× faster than my SoA.**
 The gap comes from micro-architectural wins:
@@ -78,12 +78,12 @@ The gap comes from micro-architectural wins:
 
 ### My experiments
 
-1. **Struct-of-Arrays (`drake/triad_scc_soa`)**
+1. **Struct-of-Arrays (`lab_code/triad_scc_soa`)**
 
    * Goal: stride linearly through memory and separate independent fields.
    * Result: fewer cache misses and better prefetch → clear gains over my baselines.
 
-2. **Parallel guess fan-out (`drake/triad_scc_parallel_d1`)**
+2. **Parallel guess fan-out (`lab_code/triad_scc_parallel_d1`)**
 
    * Strategy: when a cell has 2–3 candidates, split across threads at depth-1.
    * Guardrails: cap thread count, recycle a small pool.
