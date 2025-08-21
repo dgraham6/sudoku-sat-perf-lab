@@ -1,0 +1,4 @@
+compiler,compiler_version,flags,dataset,solver,puzzles_per_sec,usec_per_puzzle,percent_no_guess,guesses_per_puzzle
+AppleClang,17.0.0.17000013, -O3  -march=native,/Users/drakegraham/projects/sudoku-sat-lab/third_party/tdoku/data/puzzles1_unbiased,drake/triad_scc_parallel_d1,1430.615165,699.000000,47.900000,1.956000
+AppleClang,17.0.0.17000013, -O3  -march=native,/Users/drakegraham/projects/sudoku-sat-lab/third_party/tdoku/data/puzzles1_unbiased,drake/triad_scc_soa,2214.944898,451.478500,47.900000,1.435000
+AppleClang,17.0.0.17000013, -O3  -march=native,/Users/drakegraham/projects/sudoku-sat-lab/third_party/tdoku/data/puzzles1_unbiased,triad_scc_soa/solver_dpll_triad_scc,15619.661249,64.021875,47.850000,1.438400
