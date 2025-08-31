@@ -70,6 +70,7 @@ struct State {
     uint32_t num_asserted = 0;
 
     State() : asserted{}, clause_free_literals{}, implication_counts{} {}
+
     State(const State &prior_state) = default;
 };
 
@@ -110,15 +111,6 @@ struct SolverDpllTriadScc {
     size_t num_guesses_ = 0;
     size_t num_solutions_ = 0;
     State result_{};
-
-    State CloneState(const State& s) {
-        State out;
-        out.asserted = s.asserted;
-        out.clause_free_literals = s.clause_free_literals;  // deep copy of vector
-        out.implication_counts = s.implication_counts;      // array copy
-        out.num_asserted = s.num_asserted;
-        return out;
-    }
 
     SolverDpllTriadScc() {
         SetupConstraints();
@@ -330,7 +322,7 @@ struct SolverDpllTriadScc {
     LiteralId best_component_literal = kNoLiteral;
     int best_component_size = -1;
 
-    bool SccVisit(LiteralId literal, State *state) {
+bool SccVisit(LiteralId literal, State *state) {
         if (scc_inference_) {
             LiteralId common_ancestor = kNoLiteral;
             for (auto ancestor : stack_p) {
@@ -341,7 +333,12 @@ struct SolverDpllTriadScc {
                 }
             }
             if (common_ancestor != kNoLiteral) {
+                // we found a proximal ancestor implying both the literal and its negation.
+                // (this ancestor might actually be the negation). we can therefore eliminate
+                // the ancestor (and as a consequence the chain of literals from the ancestor
+                // up to the root of stack_p). this might lead to discovery of a conflict.
                 if (!Assert(Not(common_ancestor), state)) return false;
+                // or it might lead to discovery of an assertion that lets us skip this branch.
                 if (state->asserted[literal]) return true;
             }
         }
@@ -355,12 +352,16 @@ struct SolverDpllTriadScc {
         for (size_t i = 0; i < num_implications; i++) {
             LiteralId implication = implications[i];
             if (state->asserted[implication]) {
+                // we can skip any already-asserted implications. these correspond to subsumed
+                // binary clauses that have no effect on inference.
                 continue;
             } else if (preorder_index[implication] == -1) {
                 if (!SccVisit(implication, state)) {
-                    return false;
+                    return false; // back out. we are in an inconsistent state.
                 }
                 if (scc_inference_ && state->asserted.pos_or_neg(literal)) {
+                    // visiting an implication and its consequences may have resulted in the
+                    // current literal's assertion or negation. either way we can stop.
                     break;
                 }
             } else if (literal_to_component_id[implication] == -1) {
@@ -371,14 +372,18 @@ struct SolverDpllTriadScc {
         }
         if (literal == stack_p.back()) {
             stack_p.pop_back();
-            int component_size = (int)(find(stack_s.rbegin(), stack_s.rend(), literal) -
-                                       stack_s.rbegin() + 1);
+            int component_size = (find(stack_s.rbegin(), stack_s.rend(), literal) -
+                                  stack_s.rbegin() + 1);
             if (!state->asserted.pos_or_neg(literal)) {
                 bool negation_has_component = literal_to_component_id[Not(literal)] >= 0;
                 for (auto it = stack_s.end() - component_size; it != stack_s.end(); it++) {
                     literal_to_component_id[*it] = next_component_id;
                 }
+                // if the negation has a prior component it will be of the same size, and we
+                // should prefer it since topologically there may exist a path of implication
+                // from this component to the one containing the negation. in this case skip.
                 if (!negation_has_component) {
+                    // otherwise, we want to prioritize the largest component.
                     if (component_size > best_component_size) {
                         best_component_size = component_size;
                         best_component_literal = literal;
@@ -457,7 +462,7 @@ struct SolverDpllTriadScc {
         // Deep-copy implication storage so each branch can push independently
         s->literals_to_implications_ = literals_to_implications_;
 
-        // Copy initial state metadata (e.g., clause_free_literals length/values)
+        // Copy initial state 
         s->initial_state_            = initial_state_;
 
         s->scc_heuristic_            = scc_heuristic_;
@@ -475,7 +480,7 @@ struct SolverDpllTriadScc {
         return s;
     }
 
-        SearchStats BranchOnLiteral(
+    SearchStats BranchOnLiteral(
             LiteralId literal,
             State* state,
             int depth,
@@ -524,7 +529,7 @@ struct SolverDpllTriadScc {
         out.solutions += left_out.stats.solutions + right_stats.solutions;
         out.guesses   += left_out.stats.guesses   + right_stats.guesses;
 
-        // If left found a solution, adopt it (no deref of a moved pointer!)
+        // If left found a solution, adopt it 
         if (left_out.wrote_first && !wrote_first_solution_.load(std::memory_order_relaxed)) {
             result_ = left_out.result;
             wrote_first_solution_.store(true, std::memory_order_relaxed);
@@ -558,8 +563,6 @@ struct SolverDpllTriadScc {
         return out;
     }
 
-
-
     SearchStats CountSolutionsConsistentWithPartialAssignment(
         State *state, int depth, bool parallel_first_split, size_t limit_remaining) {
 
@@ -592,14 +595,6 @@ struct SolverDpllTriadScc {
             (scc_heuristic_ && best_component_literal != kNoLiteral)
                 ? best_component_literal
                 : ChooseLiteralToBranchByClause(state);
-
-        #ifndef NDEBUG
-            // Sanity: must be a valid, non-decided *positive* literal (even id)
-            if (!ValidLiteral(branch_literal) || state->asserted.pos_or_neg(branch_literal) || (branch_literal & 1u)) {
-                std::cerr << "Invalid branch literal chosen.\n";
-                std::abort();
-            }
-        #endif
 
         auto got = BranchOnLiteral(branch_literal, state, depth, parallel_first_split, limit_remaining);
         if (got.solutions >= limit_remaining) {
