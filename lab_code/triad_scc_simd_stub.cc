@@ -1,5 +1,5 @@
 // Minimal stub so the registry can link on ARM.
-
+// Due to the problems if your not on x86
 #include <cstddef>
 #include <cstdint>
 
