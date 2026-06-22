@@ -123,11 +123,15 @@ else()
 endif()
 
 # === Drake + stock SCC sources ===
+# The Drake lab solvers live at the repo top level in lab_code/ (single source of
+# truth, documented in the README). Quoted #includes in those .cc files resolve
+# relative to lab_code/, so no extra include dirs are needed.
+set(DRAKE_LAB_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../lab_code")
 list(APPEND BENCHMARK_SOLVER_SOURCES
-    src/solver_dpll_triad_scc.cc          # stock SCC
-    src/lab_drake/triad_scc_parallel_d1.cc
-    src/lab_drake/triad_scc_soa.cc
-    src/lab_drake/triad_scc_simd_stub.cc  # your stub that forwards SIMD to SOA
+    src/solver_dpll_triad_scc.cc          # stock SCC (reference)
+    ${DRAKE_LAB_DIR}/triad_scc_parallel_d1.cc
+    ${DRAKE_LAB_DIR}/triad_scc_soa.cc
+    ${DRAKE_LAB_DIR}/triad_scc_simd_stub.cc  # stub: forwards SIMD to SOA on ARM
 )
 
 if (GSS)

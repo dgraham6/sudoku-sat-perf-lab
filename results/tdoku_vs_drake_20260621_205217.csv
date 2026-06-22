@@ -1,0 +1,7 @@
+compiler,compiler_version,flags,dataset,solver,puzzles_per_sec,usec_per_puzzle,percent_no_guess,guesses_per_puzzle
+AppleClang,21.0.0.21000101, -O3  -march=native,/Users/drakegraham/projects/sudoku-sat-lab/third_party/tdoku/data/puzzles1_unbiased,tdoku/triad_scc,13487.079619,74.145036,61.750000,0.512500
+AppleClang,21.0.0.21000101, -O3  -march=native,/Users/drakegraham/projects/sudoku-sat-lab/third_party/tdoku/data/puzzles1_unbiased,drake/triad_scc_soa,2288.208215,437.023167,61.750000,0.512500
+AppleClang,21.0.0.21000101, -O3  -march=native,/Users/drakegraham/projects/sudoku-sat-lab/third_party/tdoku/data/puzzles1_unbiased,drake/triad_scc_parallel_d1,1678.532493,595.758500,61.750000,0.895000
+AppleClang,21.0.0.21000101, -O3  -march=native,/Users/drakegraham/projects/sudoku-sat-lab/third_party/tdoku/data/puzzles2_17_clue,tdoku/triad_scc,17828.551732,56.089806,87.550000,0.149000
+AppleClang,21.0.0.21000101, -O3  -march=native,/Users/drakegraham/projects/sudoku-sat-lab/third_party/tdoku/data/puzzles2_17_clue,drake/triad_scc_soa,2336.825329,427.931000,87.550000,0.149000
+AppleClang,21.0.0.21000101, -O3  -march=native,/Users/drakegraham/projects/sudoku-sat-lab/third_party/tdoku/data/puzzles2_17_clue,drake/triad_scc_parallel_d1,1969.086652,507.849667,87.550000,0.273500

@@ -596,6 +596,15 @@ bool SccVisit(LiteralId literal, State *state) {
                 ? best_component_literal
                 : ChooseLiteralToBranchByClause(state);
 
+#ifndef NDEBUG
+        // Sanity: must be a valid, undecided *positive* literal (even id). Compiled out in release.
+        if (!ValidLiteral(branch_literal) || state->asserted.pos_or_neg(branch_literal) ||
+            (branch_literal & 1u)) {
+            std::cerr << "Invalid branch literal chosen.\n";
+            std::abort();
+        }
+#endif
+
         auto got = BranchOnLiteral(branch_literal, state, depth, parallel_first_split, limit_remaining);
         if (got.solutions >= limit_remaining) {
             stop_.store(true, std::memory_order_relaxed);

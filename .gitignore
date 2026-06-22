@@ -1,0 +1,14 @@
+# macOS
+.DS_Store
+
+# Build output
+/build/
+third_party/tdoku/build/
+
+# Editor / IDE
+*.swp
+.idea/
+.vscode/
+
+# Benchmark scratch (keep curated CSVs under results/ by committing them explicitly)
+results/*.tmp

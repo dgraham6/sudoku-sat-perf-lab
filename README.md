@@ -26,6 +26,7 @@ This repo is my **performance lab**: a place to re-implement pieces of Tdoku’s
 * [Why this project](#why-this-project)
 * [Highlights](#highlights)
 * [Background](#background)
+* [Build & run](#build--run)
 * [Analysis of results](#analysis-of-results)
 * [Design & Implementation Notes](#design--implementation-notes)
 * [Environment](#environment)
@@ -46,12 +47,39 @@ Most puzzles collapse under unit propagation and short implication chains. That 
 
 ---
 
+## Build & run
+
+```bash
+# Build the vendored tdoku harness together with the Drake lab solvers.
+cmake -S third_party/tdoku -B third_party/tdoku/build -DCMAKE_BUILD_TYPE=Release
+cmake --build third_party/tdoku/build -j
+
+# Correctness: solve + count solutions on the bundled test set.
+./third_party/tdoku/build/run_tests
+
+# Benchmark drake vs the stock tdoku SCC reference (writes a CSV to results/).
+scripts/bench_tdoku_vs_drake.sh
+```
+
+The Drake solvers live in `lab_code/` (single source of truth). They are compiled
+straight from that directory and registered in tdoku's benchmark/test harness via
+`third_party/tdoku/src/all_solvers.h`, all with SCC inference + heuristic enabled.
+
 ## Analysis of results
 
-**SoA beats Parallel D1.**
-`lab_code/triad_scc_soa` runs \~55% faster than the depth-1 parallel version. Memory layout wins; thread overhead loses — especially since \~48% of puzzles need **no guesses at all**.
+> Numbers below are from `puzzles1_unbiased` (AppleClang, `-O3 -march=native`, ARM,
+> single thread, 2000 puzzles), reproducible via `scripts/bench_tdoku_vs_drake.sh`.
+> All solvers run with SCC inference + heuristic on, so the Drake and tdoku solvers
+> produce **identical** guess counts (~0.51 guesses/puzzle, ~62% solved with no
+> guesses) — the differences below are purely in execution speed.
 
-**Tdoku is \~7× faster than my SoA.**
+**SoA beats Parallel D1.**
+`lab_code/triad_scc_soa` (~2.3k puzzles/sec) runs \~35% faster than the depth-1
+parallel version (~1.7k puzzles/sec). Memory layout wins; thread overhead loses —
+especially since most puzzles need few or no guesses, so there is little search to
+parallelize.
+
+**Tdoku is \~6× faster than my SoA.**
 The gap comes from micro-architectural wins:
 
 * hyper-tight propagation loops,
@@ -61,7 +89,7 @@ The gap comes from micro-architectural wins:
 
 **Why Parallel D1 underperforms.**
 
-* Branching helps only on puzzles that force deep search; half don’t.
+* Branching helps only on puzzles that force deep search; most don’t.
 * Thread startup, scheduling, and sync dominate the actual work.
 * Copying or sharing solver state adds cache overhead.
 * Net: parallel fan-out only makes sense with a **work-stealing pool** and coarse tasks; a single depth-1 split is too fine-grained.
@@ -93,7 +121,9 @@ The gap comes from micro-architectural wins:
 
 ## Environment
 
-* Compiler: AppleClang 17.0.0.17000013
+* Platform: Apple Silicon (ARM64). The x86 SIMD solver from tdoku is skipped on
+  ARM; `triad_scc_simd_stub.cc` forwards the SIMD entry point to the SoA solver.
+* Compiler: AppleClang (tested with 17.x and 21.x)
 * Flags: `-O3 -march=native`
 
 ---

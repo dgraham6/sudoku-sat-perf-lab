@@ -219,10 +219,18 @@ std::vector<Solver> GetAllSolvers() {
 #ifdef RUST_SUDOKU
     solvers.emplace_back(Solver(OtherSolverRustSudoku,        0, "rust_sudoku",               "B/shr.../m.", 14));
 #endif
-    solvers.emplace_back(Solver(DrakeSolverTriadScc_SOA,         0,
-        "drake/triad_scc_soa",         "S/shrc+./m+", 15));
-    solvers.emplace_back(Solver(DrakeSolverTriadScc_ParallelD1,  0,
-        "drake/triad_scc_parallel_d1", "S/shrc+./m+", 15));
+    // Stock tdoku SCC solver, registered unconditionally as the benchmark reference.
+    // (Previously only available behind the TDEV build flag, so the bench script's
+    // "tdoku/triad_scc" target silently resolved to nothing.)
+    solvers.emplace_back(Solver(TdokuSolverDpllTriadScc,         3,
+        "tdoku/triad_scc",             "S/shrc++/m+", 15));
+    // Drake lab solvers. Configuration 3 = SCC inference (bit 0) + SCC heuristic
+    // (bit 1), the intended mode that makes these "triad_scc" solvers actually use
+    // SCC-driven branching. With SCC on their guess counts match tdoku's exactly.
+    solvers.emplace_back(Solver(DrakeSolverTriadScc_SOA,         3,
+        "drake/triad_scc_soa",         "S/shrc++/m+", 15));
+    solvers.emplace_back(Solver(DrakeSolverTriadScc_ParallelD1,  3,
+        "drake/triad_scc_parallel_d1", "S/shrc++/m+", 15));
     // @formatter:on
     return solvers;
 }

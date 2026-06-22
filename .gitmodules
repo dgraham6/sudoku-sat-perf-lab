@@ -1,3 +1,0 @@
-[submodule "third_party/tdoku"]
-	path = third_party/tdoku
-	url = https://github.com/t-dillon/tdoku.git
